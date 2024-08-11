@@ -2,9 +2,22 @@ import * as ort from 'onnxruntime-web';
 
 let session;
 
-export async function loadModel(modelPath) {
+export async function loadModel(modelFile, weightsFile, argsFile) {
   try {
-    session = await ort.InferenceSession.create(modelPath);
+    const modelArrayBuffer = modelFile.content;
+    const weightsArrayBuffer = weightsFile ? weightsFile.content : null;
+    const argsJson = argsFile ? JSON.parse(new TextDecoder().decode(argsFile.content)) : {};
+
+    const options = {
+      executionProviders: ['wasm'],
+      ...argsJson,
+    };
+
+    if (weightsArrayBuffer) {
+      options.loadedWeights = new Uint8Array(weightsArrayBuffer);
+    }
+
+    session = await ort.InferenceSession.create(modelArrayBuffer, options);
     console.log('ONNX model loaded successfully');
   } catch (error) {
     console.error('Failed to load the ONNX model:', error);

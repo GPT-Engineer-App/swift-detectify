@@ -17,6 +17,24 @@ const SettingsPage = () => {
     });
   };
 
+  const handleFileChange = (e, fileType) => {
+    const files = e.target.files;
+    if (files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        updateSettings({
+          ...settings,
+          [fileType]: {
+            name: file.name,
+            content: event.target.result,
+          },
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     updateSettings(settings);
@@ -61,14 +79,44 @@ const SettingsPage = () => {
               />
             </div>
             <div className="mb-4">
-              <Label htmlFor="modelPath">Model Path</Label>
+              <Label htmlFor="modelFolder">Model Folder</Label>
               <Input
-                id="modelPath"
-                name="modelPath"
-                type="text"
-                value={settings.modelPath}
-                onChange={handleChange}
-                placeholder="/path/to/your/model.onnx"
+                id="modelFolder"
+                name="modelFolder"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'modelFolder')}
+                webkitdirectory="true"
+                directory="true"
+                multiple
+              />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="modelFile">Model File</Label>
+              <Input
+                id="modelFile"
+                name="modelFile"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'modelFile')}
+                accept=".onnx"
+              />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="weightsFile">Weights File</Label>
+              <Input
+                id="weightsFile"
+                name="weightsFile"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'weightsFile')}
+              />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="argsFile">Arguments File</Label>
+              <Input
+                id="argsFile"
+                name="argsFile"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'argsFile')}
+                accept=".json"
               />
             </div>
             <Button type="submit">Save Settings</Button>

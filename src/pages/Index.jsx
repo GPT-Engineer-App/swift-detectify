@@ -25,15 +25,15 @@ const Index = () => {
     }
 
     // Load the ONNX model
-    if (settings.modelPath) {
-      loadModel(settings.modelPath).catch(error => {
+    if (settings.modelFile) {
+      loadModel(settings.modelFile, settings.weightsFile, settings.argsFile).catch(error => {
         console.error("Failed to load the model:", error);
-        setError("Failed to load the object detection model. Please check the model path in settings and try again.");
+        setError("Failed to load the object detection model. Please check the model files in settings and try again.");
       });
     } else {
-      setError("Model path is not set. Please set the model path in settings.");
+      setError("Model file is not set. Please upload the model file in settings.");
     }
-  }, [settings.modelPath]);
+  }, [settings.modelFile, settings.weightsFile, settings.argsFile]);
 
   useEffect(() => {
     saveCountsToLocalStorage(counts);
