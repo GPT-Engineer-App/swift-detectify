@@ -70,19 +70,22 @@ const Index = () => {
   const startDetection = () => {
     const worker = new Worker(new URL('../workers/detectionWorker.js', import.meta.url));
     worker.onmessage = (event) => {
-      if (event.data.error) {
-        setError(event.data.error);
+      try {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          console.error("Detection error:", data.error);
+          setError(data.error);
+          setIsDetecting(false);
+          stopCamera();
+        } else {
+          updateCounts(data);
+          setError(null);
+        }
+      } catch (error) {
+        console.error("Failed to parse worker message:", error);
+        setError("Failed to process detection results");
         setIsDetecting(false);
         stopCamera();
-      } else {
-        try {
-          const detectedObjects = JSON.parse(event.data);
-          updateCounts(detectedObjects);
-          setError(null);
-        } catch (error) {
-          console.error("Failed to parse worker message:", error);
-          setError("Failed to process detection results");
-        }
       }
     };
 
@@ -192,7 +195,7 @@ const Index = () => {
             <BarChart data={chartData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis />
+              <YAxis width={40} />
               <Tooltip />
               <Legend />
               <Bar dataKey="count" fill="#8884d8" />
