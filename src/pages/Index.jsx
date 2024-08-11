@@ -78,7 +78,9 @@ const Index = () => {
         const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
         
         try {
+          console.log("Sending image data for detection...");
           const detectedObjects = await detectObjects(imageData);
+          console.log("Detected objects:", detectedObjects);
           updateCounts(detectedObjects);
           setError(null);
         } catch (error) {

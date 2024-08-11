@@ -3,19 +3,26 @@ export async function detectObjects(imageData) {
     const response = await fetch("https://detect.roboflow.com/cds-depot-counter-ivjbi/1", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/json",
+        "Authorization": "Bearer gpvPQE3wHQT6oVIkSX4k"
       },
-      body: new URLSearchParams({
-        api_key: "gpvPQE3wHQT6oVIkSX4k",
+      body: JSON.stringify({
         image: imageData
       })
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
 
     const data = await response.json();
+    console.log("API Response:", data); // Log the full response for debugging
+
+    if (!data.predictions || !Array.isArray(data.predictions)) {
+      throw new Error("Unexpected API response format");
+    }
+
     return data.predictions.map(prediction => ({
       class: prediction.class,
       confidence: prediction.confidence,
