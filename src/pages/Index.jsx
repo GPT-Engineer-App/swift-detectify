@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Stop, Settings, History, Info } from "lucide-react";
+import { Play, Square, Settings, History, Info } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Index = () => {
@@ -69,7 +69,7 @@ const Index = () => {
 
       <div className="flex justify-center space-x-4 mb-6">
         <Button onClick={isDetecting ? stopDetection : startDetection} className="w-32">
-          {isDetecting ? <><Stop className="mr-2 h-4 w-4" /> Stop</> : <><Play className="mr-2 h-4 w-4" /> Start</>}
+          {isDetecting ? <><Square className="mr-2 h-4 w-4" /> Stop</> : <><Play className="mr-2 h-4 w-4" /> Start</>}
         </Button>
         <Button variant="outline" className="w-32">
           <Settings className="mr-2 h-4 w-4" /> Settings
