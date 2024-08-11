@@ -1,4 +1,4 @@
-self.detectObjects = async function(imageData) {
+export async function detectObjects(imageData) {
   try {
     const response = await fetch("https://detect.roboflow.com/cds-depot-counter-ivjbi/1", {
       method: "POST",
@@ -21,4 +21,4 @@ self.detectObjects = async function(imageData) {
     console.error("Error detecting objects:", error);
     throw error;
   }
-};
+}

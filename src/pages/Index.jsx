@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
+import { detectObjects } from '../utils/objectDetection';
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -68,41 +69,33 @@ const Index = () => {
   };
 
   const startDetection = () => {
-    const worker = new Worker(new URL('../workers/detectionWorker.js', import.meta.url));
-    worker.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.error) {
-          console.error("Detection error:", data.error);
-          setError(data.error);
-          setIsDetecting(false);
-          stopCamera();
-        } else {
-          updateCounts(data);
-          setError(null);
-        }
-      } catch (error) {
-        console.error("Failed to process worker message:", error);
-        setError(`Detection error: ${error.message}`);
-        setIsDetecting(false);
-        stopCamera();
-        toast({
-          variant: "destructive",
-          title: "Detection Error",
-          description: `An error occurred during object detection: ${error.message}`,
-        });
-      }
-    };
-
-    const detectFrame = () => {
+    const detectFrame = async () => {
       if (videoRef.current && isDetecting) {
         const canvas = document.createElement('canvas');
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
         const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
-        worker.postMessage(JSON.stringify({ image: imageData }));
-        requestAnimationFrame(detectFrame);
+        
+        try {
+          const detectedObjects = await detectObjects(imageData);
+          updateCounts(detectedObjects);
+          setError(null);
+        } catch (error) {
+          console.error("Detection error:", error);
+          setError(`Detection error: ${error.message}`);
+          setIsDetecting(false);
+          stopCamera();
+          toast({
+            variant: "destructive",
+            title: "Detection Error",
+            description: `An error occurred during object detection: ${error.message}`,
+          });
+        }
+        
+        if (isDetecting) {
+          requestAnimationFrame(detectFrame);
+        }
       }
     };
 
