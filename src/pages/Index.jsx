@@ -7,13 +7,27 @@ import { Play, Square, Settings, History, Info, AlertCircle, Camera } from "luci
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
-import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
+import { saveCountsToIndexedDB, getCountsFromIndexedDB } from '../utils/localStorage';
 import { detectObjects, loadModel } from '../utils/objectDetection';
 import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
-  const [counts, setCounts] = useState(getCountsFromLocalStorage());
+  const [counts, setCounts] = useState({
+    glass: 0,
+    can: 0,
+    pet1: 0,
+    hdpe2: 0,
+    carton: 0
+  });
+
+  useEffect(() => {
+    const loadCounts = async () => {
+      const storedCounts = await getCountsFromIndexedDB();
+      setCounts(storedCounts);
+    };
+    loadCounts();
+  }, []);
   const [error, setError] = useState(null);
   const videoRef = useRef(null);
   const { toast } = useToast();
@@ -49,7 +63,7 @@ const Index = () => {
   }, [settings.modelFileName, getModelFile]);
 
   useEffect(() => {
-    saveCountsToLocalStorage(counts);
+    saveCountsToIndexedDB(counts);
   }, [counts]);
 
   const startCamera = async () => {
