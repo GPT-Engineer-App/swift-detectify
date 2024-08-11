@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import * as tf from '@tensorflow/tfjs';
@@ -12,8 +12,8 @@ import { detectObjects, loadModel } from '../utils/objectDetection';
 import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [counts, setCounts] = useState({
+  const [isDetecting, setIsDetecting] = React.useState(false);
+  const [counts, setCounts] = React.useState({
     glass: 0,
     can: 0,
     pet1: 0,
