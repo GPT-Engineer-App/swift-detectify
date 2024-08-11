@@ -9,7 +9,7 @@ export async function loadModel(modelFile) {
       throw new Error('Model file is missing or invalid');
     }
 
-    const modelArrayBuffer = modelFile.content;
+    const modelArrayBuffer = modelFile.content instanceof Uint8Array ? modelFile.content : new Uint8Array(modelFile.content.split(',').map(Number));
     model = await tf.loadGraphModel(tf.io.browserFiles([new File([modelArrayBuffer], 'model.json')]));
     console.log('TensorFlow.js model loaded successfully');
   } catch (error) {

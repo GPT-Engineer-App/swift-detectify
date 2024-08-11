@@ -19,7 +19,7 @@ export function useSettings() {
           updateInterval: parseInt(parsedSettings.updateInterval, 10) || defaultSettings.updateInterval,
           modelFile: parsedSettings.modelFile ? {
             name: parsedSettings.modelFile.name,
-            content: new Uint8Array(parsedSettings.modelFile.content),
+            content: new Uint8Array(parsedSettings.modelFile.content.split(',').map(Number)),
           } : null,
         });
       } catch (error) {
@@ -35,7 +35,7 @@ export function useSettings() {
       updateInterval: parseInt(newSettings.updateInterval, 10) || defaultSettings.updateInterval,
       modelFile: newSettings.modelFile ? {
         name: newSettings.modelFile.name,
-        content: Array.from(newSettings.modelFile.content), // Convert Uint8Array to regular array for JSON serialization
+        content: Array.from(newSettings.modelFile.content).join(','), // Convert Uint8Array to string for JSON serialization
       } : null,
     };
     setSettings(updatedSettings);
