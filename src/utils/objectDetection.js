@@ -42,17 +42,8 @@ export async function detectObjects(imageData, confidenceThreshold, model) {
       throw new Error('Invalid results after processing');
     }
 
-    // Filter predictions based on confidence threshold
-    const detections = [];
-    for (let i = 0; i < scores.length; i++) {
-      if (scores[i] > confidenceThreshold) {
-        detections.push({
-          class: getClassName(classes[i]),
-          confidence: scores[i],
-          bbox: boxes[i]
-        });
-      }
-    }
+    // Filter predictions based on confidence threshold and perform non-max suppression
+    const detections = await performNMS(boxes, scores, classes, confidenceThreshold);
 
     return detections;
   } catch (error) {
@@ -62,6 +53,29 @@ export async function detectObjects(imageData, confidenceThreshold, model) {
     // Clean up tensors to prevent memory leaks
     if (tensor) tensor.dispose();
   }
+}
+
+async function performNMS(boxes, scores, classes, confidenceThreshold, iouThreshold = 0.5) {
+  const detections = [];
+  const indices = await tf.image.nonMaxSuppressionAsync(
+    tf.tensor2d(boxes),
+    tf.tensor1d(scores),
+    100, // Max number of detections
+    iouThreshold,
+    confidenceThreshold
+  );
+
+  const indicesArray = await indices.array();
+  for (let i = 0; i < indicesArray.length; i++) {
+    const idx = indicesArray[i];
+    detections.push({
+      class: getClassName(classes[idx]),
+      confidence: scores[idx],
+      bbox: boxes[idx]
+    });
+  }
+
+  return detections;
 }
 
 async function preprocessImage(imageData) {

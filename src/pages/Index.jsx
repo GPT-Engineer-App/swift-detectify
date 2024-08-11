@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import * as tf from '@tensorflow/tfjs';
@@ -12,8 +12,8 @@ import { detectObjects } from '../utils/objectDetection';
 import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
-  const [isDetecting, setIsDetecting] = React.useState(false);
-  const [counts, setCounts] = React.useState({
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [counts, setCounts] = useState({
     glass: 0,
     can: 0,
     pet1: 0,
@@ -21,9 +21,13 @@ const Index = () => {
     carton: 0
   });
   const [error, setError] = useState(null);
+  const [fps, setFps] = useState(0);
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const { toast } = useToast();
   const { settings, loadModel } = useSettings();
+  const modelRef = useRef(null);
+  const lastDetectionTimeRef = useRef(0);
 
   useEffect(() => {
     const loadCounts = async () => {
@@ -31,27 +35,25 @@ const Index = () => {
       setCounts(storedCounts);
     };
     loadCounts();
-  }, []);
 
-  useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
         .then(registration => console.log('Service Worker registered with scope:', registration.scope))
         .catch(error => console.error('Service Worker registration failed:', error));
     }
 
-    // Load the TensorFlow.js model
     const loadModelFile = async () => {
       try {
         const loadedModel = await loadModel();
         if (loadedModel) {
-          setError(null); // Clear any previous errors
+          modelRef.current = loadedModel;
+          setError(null);
           toast({
             title: "Model Loaded",
             description: "Object detection model loaded successfully.",
           });
         } else {
-          setError("Model file not found or failed to load. Please upload a valid TensorFlow.js model file in settings.");
+          setError("Model file not found or failed to load. Please upload a valid model file in settings.");
         }
       } catch (error) {
         console.error("Failed to load the model:", error);
@@ -107,37 +109,38 @@ const Index = () => {
     }
   };
 
-  const startDetection = () => {
-    const detectFrame = async () => {
-      if (videoRef.current && isDetecting) {
+  const startDetection = useCallback(() => {
+    const detectFrame = async (time) => {
+      if (videoRef.current && canvasRef.current && isDetecting) {
         try {
           if (!videoRef.current.videoWidth || !videoRef.current.videoHeight) {
-            console.log("Video dimensions not available yet. Retrying...");
             requestAnimationFrame(detectFrame);
             return;
           }
 
-          const canvas = document.createElement('canvas');
-          canvas.width = videoRef.current.videoWidth;
-          canvas.height = videoRef.current.videoHeight;
-          canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-          const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+          const elapsedTime = time - lastDetectionTimeRef.current;
+          if (elapsedTime < settings.updateInterval) {
+            requestAnimationFrame(detectFrame);
+            return;
+          }
+
+          const ctx = canvasRef.current.getContext('2d');
+          ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+          const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
           
-          console.log("Sending image data for detection...");
-          const model = await loadModel();
-          if (!model) {
+          if (!modelRef.current) {
             throw new Error("Model not loaded. Please check your settings and try again.");
           }
-          const detectedObjects = await detectObjects(imageData, settings.detectionThreshold, model);
-          console.log("Detected objects:", detectedObjects);
+          const detectedObjects = await detectObjects(imageData, settings.detectionThreshold, modelRef.current);
           updateCounts(detectedObjects);
+          drawDetections(ctx, detectedObjects);
           setError(null);
 
-          await new Promise(resolve => setTimeout(resolve, settings.updateInterval));
-          
-          if (isDetecting) {
-            requestAnimationFrame(detectFrame);
-          }
+          const fps = 1000 / elapsedTime;
+          setFps(Math.round(fps));
+
+          lastDetectionTimeRef.current = time;
+          requestAnimationFrame(detectFrame);
         } catch (error) {
           console.error("Detection error:", error);
           setError(`Detection error: ${error.message}`);
@@ -152,24 +155,14 @@ const Index = () => {
       }
     };
 
-    detectFrame().catch(error => {
-      console.error("Unhandled error in detectFrame:", error);
-      setError(`Unhandled error: ${error.message}`);
-      setIsDetecting(false);
-      stopCamera();
-      toast({
-        variant: "destructive",
-        title: "Unhandled Error",
-        description: `An unexpected error occurred: ${error.message}`,
-      });
-    });
-  };
+    requestAnimationFrame(detectFrame);
+  }, [isDetecting, settings.updateInterval, settings.detectionThreshold, toast]);
 
   const stopDetection = () => {
-    // The detection will stop automatically when isDetecting becomes false
+    setIsDetecting(false);
   };
 
-  const updateCounts = (detectedObjects) => {
+  const updateCounts = useCallback((detectedObjects) => {
     setCounts(prevCounts => {
       const newCounts = { ...prevCounts };
       detectedObjects.forEach(obj => {
@@ -180,10 +173,21 @@ const Index = () => {
           console.warn(`Unknown object class detected: ${obj.class}`);
         }
       });
-      console.log("Updated counts:", newCounts);
       return newCounts;
     });
-  };
+  }, []);
+
+  const drawDetections = useCallback((ctx, detections) => {
+    detections.forEach(detection => {
+      const [x, y, width, height] = detection.bbox;
+      ctx.strokeStyle = '#00FFFF';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, width, height);
+      ctx.fillStyle = '#00FFFF';
+      ctx.font = '16px Arial';
+      ctx.fillText(`${detection.class} ${Math.round(detection.confidence * 100)}%`, x, y > 20 ? y - 5 : y + 20);
+    });
+  }, []);
 
   const chartData = Object.entries(counts).map(([name, count]) => ({ name, count }));
 
