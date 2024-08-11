@@ -1,46 +1,52 @@
 import { useState, useEffect } from 'react';
+import { openDB } from 'idb';
 
 const defaultSettings = {
   detectionThreshold: 0.3,
   updateInterval: 500,
-  modelFile: null,
+  modelFileName: null,
 };
+
+const dbPromise = openDB('SettingsDB', 1, {
+  upgrade(db) {
+    db.createObjectStore('settings');
+    db.createObjectStore('modelFiles');
+  },
+});
 
 export function useSettings() {
   const [settings, setSettings] = useState(defaultSettings);
 
   useEffect(() => {
-    const storedSettings = localStorage.getItem('appSettings');
-    if (storedSettings) {
-      try {
-        const parsedSettings = JSON.parse(storedSettings);
-        setSettings({
-          detectionThreshold: parseFloat(parsedSettings.detectionThreshold) || defaultSettings.detectionThreshold,
-          updateInterval: parseInt(parsedSettings.updateInterval, 10) || defaultSettings.updateInterval,
-          modelFile: parsedSettings.modelFile ? {
-            name: parsedSettings.modelFile.name,
-            content: new Uint8Array(parsedSettings.modelFile.content.split(',').map(Number)),
-          } : null,
-        });
-      } catch (error) {
-        console.error('Error parsing stored settings:', error);
-        setSettings(defaultSettings);
+    const loadSettings = async () => {
+      const db = await dbPromise;
+      const storedSettings = await db.get('settings', 'appSettings');
+      if (storedSettings) {
+        setSettings(storedSettings);
       }
-    }
+    };
+    loadSettings();
   }, []);
 
-  const updateSettings = (newSettings) => {
+  const updateSettings = async (newSettings) => {
     const updatedSettings = {
       detectionThreshold: parseFloat(newSettings.detectionThreshold) || defaultSettings.detectionThreshold,
       updateInterval: parseInt(newSettings.updateInterval, 10) || defaultSettings.updateInterval,
-      modelFile: newSettings.modelFile ? {
-        name: newSettings.modelFile.name,
-        content: Array.from(newSettings.modelFile.content).join(','), // Convert Uint8Array to string for JSON serialization
-      } : null,
+      modelFileName: newSettings.modelFile ? newSettings.modelFile.name : null,
     };
     setSettings(updatedSettings);
-    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
+    const db = await dbPromise;
+    await db.put('settings', updatedSettings, 'appSettings');
+    if (newSettings.modelFile) {
+      await db.put('modelFiles', newSettings.modelFile.content, newSettings.modelFile.name);
+    }
   };
 
-  return { settings, updateSettings };
+  const getModelFile = async (fileName) => {
+    if (!fileName) return null;
+    const db = await dbPromise;
+    return await db.get('modelFiles', fileName);
+  };
+
+  return { settings, updateSettings, getModelFile };
 }

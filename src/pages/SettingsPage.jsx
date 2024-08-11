@@ -17,7 +17,7 @@ const SettingsPage = () => {
     });
   };
 
-  const handleFileChange = (e, fileType) => {
+  const handleFileChange = (e) => {
     const files = e.target.files;
     if (files.length > 0) {
       const file = files[0];
@@ -26,9 +26,9 @@ const SettingsPage = () => {
         const fileContent = event.target.result;
         updateSettings({
           ...settings,
-          [fileType]: {
+          modelFile: {
             name: file.name,
-            content: Array.from(new Uint8Array(fileContent)),
+            content: new Uint8Array(fileContent),
           },
         });
       };
@@ -38,12 +38,7 @@ const SettingsPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedSettings = {
-      ...settings,
-      detectionThreshold: parseFloat(settings.detectionThreshold),
-      updateInterval: parseInt(settings.updateInterval, 10),
-    };
-    updateSettings(updatedSettings);
+    updateSettings(settings);
     toast({
       title: "Settings Updated",
       description: "Your settings have been saved successfully.",
@@ -90,9 +85,12 @@ const SettingsPage = () => {
                 id="modelFile"
                 name="modelFile"
                 type="file"
-                onChange={(e) => handleFileChange(e, 'modelFile')}
+                onChange={handleFileChange}
                 accept=".pt,.pth"
               />
+              {settings.modelFileName && (
+                <p className="mt-2 text-sm text-gray-600">Current model: {settings.modelFileName}</p>
+              )}
             </div>
             <Button type="submit">Save Settings</Button>
           </form>

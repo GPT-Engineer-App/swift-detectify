@@ -17,7 +17,7 @@ const Index = () => {
   const [error, setError] = useState(null);
   const videoRef = useRef(null);
   const { toast } = useToast();
-  const { settings } = useSettings();
+  const { settings, getModelFile } = useSettings();
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -27,15 +27,26 @@ const Index = () => {
     }
 
     // Load the PyTorch model
-    if (settings.modelFile) {
-      loadModel(settings.modelFile).catch(error => {
-        console.error("Failed to load the model:", error);
-        setError("Failed to load the object detection model. Please check the model file in settings and try again.");
-      });
-    } else {
-      setError("Model file is not set. Please upload the PyTorch model file in settings.");
-    }
-  }, [settings.modelFile]);
+    const loadModelFile = async () => {
+      if (settings.modelFileName) {
+        try {
+          const modelFile = await getModelFile(settings.modelFileName);
+          if (modelFile) {
+            await loadModel(modelFile);
+          } else {
+            setError("Model file not found. Please upload the PyTorch model file in settings.");
+          }
+        } catch (error) {
+          console.error("Failed to load the model:", error);
+          setError("Failed to load the object detection model. Please check the model file in settings and try again.");
+        }
+      } else {
+        setError("Model file is not set. Please upload the PyTorch model file in settings.");
+      }
+    };
+
+    loadModelFile();
+  }, [settings.modelFileName, getModelFile]);
 
   useEffect(() => {
     saveCountsToLocalStorage(counts);
