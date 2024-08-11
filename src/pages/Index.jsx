@@ -9,7 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
 import { detectObjects, loadModel } from '../utils/objectDetection';
-import * as tf from '@tensorflow/tfjs';
 import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
@@ -26,16 +25,6 @@ const Index = () => {
         .then(registration => console.log('Service Worker registered with scope:', registration.scope))
         .catch(error => console.error('Service Worker registration failed:', error));
     }
-
-    // Initialize TensorFlow.js
-    tf.ready().then(() => {
-      console.log('TensorFlow.js initialized');
-    });
-
-    // Initialize TensorFlow.js
-    tf.ready().then(() => {
-      console.log('TensorFlow.js initialized');
-    });
 
     // Load the PyTorch model
     if (settings.modelFile) {
