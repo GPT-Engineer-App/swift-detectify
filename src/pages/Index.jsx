@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
 import { Play, Square, Settings, History, Info, AlertCircle, Camera } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,6 +26,11 @@ const Index = () => {
         .then(registration => console.log('Service Worker registered with scope:', registration.scope))
         .catch(error => console.error('Service Worker registration failed:', error));
     }
+
+    // Initialize TensorFlow.js
+    tf.ready().then(() => {
+      console.log('TensorFlow.js initialized');
+    });
 
     // Initialize TensorFlow.js
     tf.ready().then(() => {

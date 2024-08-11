@@ -11,10 +11,10 @@ export async function loadModel(modelFile) {
 
     const modelArrayBuffer = modelFile.content;
     model = await tf.loadGraphModel(tf.io.browserFiles([new File([modelArrayBuffer], 'model.json')]));
-    console.log('PyTorch model loaded successfully');
+    console.log('TensorFlow.js model loaded successfully');
   } catch (error) {
-    console.error('Failed to load the PyTorch model:', error);
-    throw new Error(`Failed to load the PyTorch model: ${error.message}`);
+    console.error('Failed to load the TensorFlow.js model:', error);
+    throw new Error(`Failed to load the TensorFlow.js model: ${error.message}`);
   }
 }
 
@@ -54,11 +54,13 @@ export async function detectObjects(imageData, confidenceThreshold) {
 
 async function preprocessImage(imageData) {
   const img = await createImageBitmap(dataURItoBlob(imageData));
-  const tensor = tf.browser.fromPixels(img)
-    .resizeBilinear([640, 640])
-    .expandDims(0)
-    .toFloat()
-    .div(tf.scalar(255));
+  const tensor = tf.tidy(() => {
+    return tf.browser.fromPixels(img)
+      .resizeBilinear([640, 640])
+      .expandDims(0)
+      .toFloat()
+      .div(tf.scalar(255));
+  });
   return tensor;
 }
 
