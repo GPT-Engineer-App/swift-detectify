@@ -1,45 +1,68 @@
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
+
+let model;
+
+export async function loadModel() {
+  model = await tf.loadGraphModel('path/to/your/model.json');
+}
+
 export async function detectObjects(imageData, confidenceThreshold) {
+  if (!model) {
+    await loadModel();
+  }
+
   try {
-    const response = await fetch("https://detect.roboflow.com/cds-depot-counter-ivjbi/1", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer YOUR_ACTUAL_API_KEY_HERE"
-      },
-      body: JSON.stringify({
-        image: imageData,
-        confidence: confidenceThreshold
-      })
-    });
+    // Convert base64 image to tensor
+    const imgTensor = tf.browser.fromPixels(await createImageBitmap(dataURItoBlob(imageData)));
+    const input = tf.image.resizeBilinear(imgTensor, [224, 224]).div(255.0).expandDims();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    // Run inference
+    const predictions = await model.executeAsync(input);
+
+    // Process predictions
+    const boxes = await predictions[0].array();
+    const scores = await predictions[1].array();
+    const classes = await predictions[2].array();
+
+    // Filter predictions based on confidence threshold
+    const detections = [];
+    for (let i = 0; i < scores[0].length; i++) {
+      if (scores[0][i] > confidenceThreshold) {
+        detections.push({
+          class: getClassName(classes[0][i]),
+          confidence: scores[0][i],
+          bbox: boxes[0][i]
+        });
+      }
     }
 
-    const data = await response.json();
-    console.log("API Response:", data); // Log the full response for debugging
-
-    if (!data.predictions || !Array.isArray(data.predictions)) {
-      throw new Error("Unexpected API response format");
-    }
-
-    return data.predictions.map(prediction => ({
-      class: prediction.class,
-      confidence: prediction.confidence,
-      x: prediction.x,
-      y: prediction.y,
-      width: prediction.width,
-      height: prediction.height
-    }));
+    return detections;
   } catch (error) {
     console.error("Error detecting objects:", error);
-    if (error instanceof TypeError) {
-      throw new Error("Network error: Unable to connect to the detection service. Please check your internet connection.");
-    } else if (error.message.includes("HTTP error!")) {
-      throw new Error("API error: The detection service returned an error. Please try again later.");
-    } else {
-      throw new Error(`Unexpected error during object detection: ${error.message}`);
-    }
+    throw new Error(`Unexpected error during object detection: ${error.message}`);
   }
+}
+
+function dataURItoBlob(dataURI) {
+  const byteString = atob(dataURI.split(',')[1]);
+  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeString });
+}
+
+function getClassName(classId) {
+  // Map class IDs to class names based on your model's classes
+  const classMap = {
+    1: 'glass',
+    2: 'can',
+    3: 'pet1',
+    4: 'hdpe2',
+    5: 'carton'
+  };
+  return classMap[classId] || 'unknown';
 }

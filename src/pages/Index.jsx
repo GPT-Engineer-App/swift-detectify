@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
-import { detectObjects } from '../utils/objectDetection';
+import { detectObjects, loadModel } from '../utils/objectDetection';
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -23,6 +23,12 @@ const Index = () => {
         .then(registration => console.log('Service Worker registered with scope:', registration.scope))
         .catch(error => console.error('Service Worker registration failed:', error));
     }
+
+    // Load the TensorFlow.js model
+    loadModel().catch(error => {
+      console.error("Failed to load the model:", error);
+      setError("Failed to load the object detection model. Please refresh the page and try again.");
+    });
   }, []);
 
   useEffect(() => {
