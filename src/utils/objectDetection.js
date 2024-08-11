@@ -34,6 +34,12 @@ export async function detectObjects(imageData, confidenceThreshold) {
     }));
   } catch (error) {
     console.error("Error detecting objects:", error);
-    throw error;
+    if (error instanceof TypeError) {
+      throw new Error("Network error: Unable to connect to the detection service. Please check your internet connection.");
+    } else if (error.message.includes("HTTP error!")) {
+      throw new Error("API error: The detection service returned an error. Please try again later.");
+    } else {
+      throw new Error(`Unexpected error during object detection: ${error.message}`);
+    }
   }
 }

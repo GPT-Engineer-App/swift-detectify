@@ -73,18 +73,25 @@ const Index = () => {
   const startDetection = () => {
     const detectFrame = async () => {
       if (videoRef.current && isDetecting) {
-        const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
-        
         try {
+          const canvas = document.createElement('canvas');
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
+          canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+          const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+          
           console.log("Sending image data for detection...");
           const detectedObjects = await detectObjects(imageData, settings.detectionThreshold);
           console.log("Detected objects:", detectedObjects);
           updateCounts(detectedObjects);
           setError(null);
+
+          // Use the settings.updateInterval for the delay
+          await new Promise(resolve => setTimeout(resolve, settings.updateInterval));
+          
+          if (isDetecting) {
+            requestAnimationFrame(detectFrame);
+          }
         } catch (error) {
           console.error("Detection error:", error);
           setError(`Detection error: ${error.message}`);
@@ -96,17 +103,20 @@ const Index = () => {
             description: `An error occurred during object detection: ${error.message}`,
           });
         }
-
-        // Use the settings.updateInterval for the delay
-        await new Promise(resolve => setTimeout(resolve, settings.updateInterval));
-        
-        if (isDetecting) {
-          requestAnimationFrame(detectFrame);
-        }
       }
     };
 
-    requestAnimationFrame(detectFrame);
+    detectFrame().catch(error => {
+      console.error("Unhandled error in detectFrame:", error);
+      setError(`Unhandled error: ${error.message}`);
+      setIsDetecting(false);
+      stopCamera();
+      toast({
+        variant: "destructive",
+        title: "Unhandled Error",
+        description: `An unexpected error occurred: ${error.message}`,
+      });
+    });
   };
 
   const stopDetection = () => {
