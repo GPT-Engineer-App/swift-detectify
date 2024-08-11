@@ -1,26 +1,28 @@
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useSettings } from '../hooks/useSettings';
+import { useToast } from "@/components/ui/use-toast";
 
 const SettingsPage = () => {
-  const [settings, setSettings] = useState({
-    detectionThreshold: 0.7,
-    updateInterval: 2000,
-  });
+  const { settings, updateSettings } = useSettings();
+  const { toast } = useToast();
 
   const handleChange = (e) => {
-    setSettings({
+    updateSettings({
       ...settings,
-      [e.target.name]: e.target.value,
+      [e.target.name]: parseFloat(e.target.value),
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically save the settings to a backend or local storage
-    console.log('Settings saved:', settings);
+    updateSettings(settings);
+    toast({
+      title: "Settings Updated",
+      description: "Your settings have been saved successfully.",
+    });
   };
 
   return (

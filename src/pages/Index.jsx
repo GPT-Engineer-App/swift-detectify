@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Square, Settings, History, Info, AlertCircle, Camera } from "lucide-react";
+import { useSettings } from '../hooks/useSettings';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,6 +15,7 @@ const Index = () => {
   const [error, setError] = useState(null);
   const videoRef = useRef(null);
   const { toast } = useToast();
+  const { settings } = useSettings();
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -79,7 +81,7 @@ const Index = () => {
         
         try {
           console.log("Sending image data for detection...");
-          const detectedObjects = await detectObjects(imageData);
+          const detectedObjects = await detectObjects(imageData, settings.detectionThreshold);
           console.log("Detected objects:", detectedObjects);
           updateCounts(detectedObjects);
           setError(null);
@@ -95,8 +97,8 @@ const Index = () => {
           });
         }
 
-        // Add a small delay to avoid overwhelming the API
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Use the settings.updateInterval for the delay
+        await new Promise(resolve => setTimeout(resolve, settings.updateInterval));
         
         if (isDetecting) {
           requestAnimationFrame(detectFrame);

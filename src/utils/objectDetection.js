@@ -1,4 +1,4 @@
-export async function detectObjects(imageData) {
+export async function detectObjects(imageData, confidenceThreshold) {
   try {
     const response = await fetch("https://detect.roboflow.com/cds-depot-counter-ivjbi/1", {
       method: "POST",
@@ -7,7 +7,8 @@ export async function detectObjects(imageData) {
         "Authorization": "Bearer YOUR_ACTUAL_API_KEY_HERE"
       },
       body: JSON.stringify({
-        image: imageData
+        image: imageData,
+        confidence: confidenceThreshold
       })
     });
 
