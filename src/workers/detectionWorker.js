@@ -1,7 +1,7 @@
 self.importScripts('../utils/objectDetection.js');
 
 self.onmessage = async (event) => {
-  const { image } = event.data;
+  const { image } = JSON.parse(event.data);
   try {
     const detectedObjects = await self.detectObjects(image);
     if (Array.isArray(detectedObjects)) {

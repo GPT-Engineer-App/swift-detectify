@@ -82,10 +82,15 @@ const Index = () => {
           setError(null);
         }
       } catch (error) {
-        console.error("Failed to parse worker message:", error);
-        setError("Failed to process detection results");
+        console.error("Failed to process worker message:", error);
+        setError(`Detection error: ${error.message}`);
         setIsDetecting(false);
         stopCamera();
+        toast({
+          variant: "destructive",
+          title: "Detection Error",
+          description: `An error occurred during object detection: ${error.message}`,
+        });
       }
     };
 
@@ -96,7 +101,7 @@ const Index = () => {
         canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
         const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
-        worker.postMessage({ image: imageData });
+        worker.postMessage(JSON.stringify({ image: imageData }));
         requestAnimationFrame(detectFrame);
       }
     };
