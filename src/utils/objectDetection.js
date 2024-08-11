@@ -1,4 +1,5 @@
-import * as ort from 'onnxruntime-web';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
 
 let model;
 
@@ -9,12 +10,11 @@ export async function loadModel(modelFile) {
     }
 
     const modelArrayBuffer = modelFile.content;
-    const session = await ort.InferenceSession.create(modelArrayBuffer);
-    model = session;
-    console.log('ONNX model loaded successfully');
+    model = await tf.loadGraphModel(tf.io.browserFiles([new File([modelArrayBuffer], 'model.json')]));
+    console.log('PyTorch model loaded successfully');
   } catch (error) {
-    console.error('Failed to load the ONNX model:', error);
-    throw new Error(`Failed to load the ONNX model: ${error.message}`);
+    console.error('Failed to load the PyTorch model:', error);
+    throw new Error(`Failed to load the PyTorch model: ${error.message}`);
   }
 }
 
@@ -28,11 +28,10 @@ export async function detectObjects(imageData, confidenceThreshold) {
     const tensor = await preprocessImage(imageData);
 
     // Run inference
-    const feeds = { input: tensor };
-    const results = await model.run(feeds);
+    const predictions = await model.predict(tensor);
 
     // Process results
-    const [boxes, scores, classes] = processResults(results);
+    const [boxes, scores, classes] = await processResults(predictions);
 
     // Filter predictions based on confidence threshold
     const detections = [];
@@ -54,28 +53,16 @@ export async function detectObjects(imageData, confidenceThreshold) {
 }
 
 async function preprocessImage(imageData) {
-  // Convert base64 to image
   const img = await createImageBitmap(dataURItoBlob(imageData));
-  const canvas = document.createElement('canvas');
-  canvas.width = 640;
-  canvas.height = 640;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, 640, 640);
-  const imageData = ctx.getImageData(0, 0, 640, 640);
-  
-  // Normalize the image
-  const float32Data = new Float32Array(imageData.data.length / 4 * 3);
-  for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
-    float32Data[j] = imageData.data[i] / 255.0;
-    float32Data[j + 1] = imageData.data[i + 1] / 255.0;
-    float32Data[j + 2] = imageData.data[i + 2] / 255.0;
-  }
-  
-  return new ort.Tensor('float32', float32Data, [1, 3, 640, 640]);
+  const tensor = tf.browser.fromPixels(img)
+    .resizeBilinear([640, 640])
+    .expandDims(0)
+    .toFloat()
+    .div(tf.scalar(255));
+  return tensor;
 }
 
 async function processResults(predictions) {
-  // Extract boxes, scores, and classes from the model output
   const boxes = await predictions[0].array();
   const scores = await predictions[1].array();
   const classes = await predictions[2].array();

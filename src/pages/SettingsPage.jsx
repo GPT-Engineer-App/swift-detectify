@@ -84,13 +84,13 @@ const SettingsPage = () => {
               />
             </div>
             <div className="mb-4">
-              <Label htmlFor="modelFile">Model File</Label>
+              <Label htmlFor="modelFile">Model File (PyTorch)</Label>
               <Input
                 id="modelFile"
                 name="modelFile"
                 type="file"
                 onChange={(e) => handleFileChange(e, 'modelFile')}
-                accept=".pt"
+                accept=".pt,.pth"
               />
             </div>
             <Button type="submit">Save Settings</Button>

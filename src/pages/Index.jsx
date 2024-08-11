@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
 import { detectObjects, loadModel } from '../utils/objectDetection';
+import * as tf from '@tensorflow/tfjs';
 import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
@@ -24,16 +25,21 @@ const Index = () => {
         .catch(error => console.error('Service Worker registration failed:', error));
     }
 
-    // Load the ONNX model
+    // Initialize TensorFlow.js
+    tf.ready().then(() => {
+      console.log('TensorFlow.js initialized');
+    });
+
+    // Load the PyTorch model
     if (settings.modelFile) {
-      loadModel(settings.modelFile, settings.weightsFile, settings.argsFile).catch(error => {
+      loadModel(settings.modelFile).catch(error => {
         console.error("Failed to load the model:", error);
-        setError("Failed to load the object detection model. Please check the model files in settings and try again.");
+        setError("Failed to load the object detection model. Please check the model file in settings and try again.");
       });
     } else {
-      setError("Model file is not set. Please upload the model file in settings.");
+      setError("Model file is not set. Please upload the PyTorch model file in settings.");
     }
-  }, [settings.modelFile, settings.weightsFile, settings.argsFile]);
+  }, [settings.modelFile]);
 
   useEffect(() => {
     saveCountsToLocalStorage(counts);
