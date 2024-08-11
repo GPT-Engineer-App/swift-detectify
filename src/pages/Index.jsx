@@ -53,11 +53,16 @@ const Index = () => {
             description: "Object detection model loaded successfully.",
           });
         } else {
-          setError("Model file not found or failed to load. Please upload a valid model file in settings.");
+          throw new Error("Model failed to load. Please check the model file in settings.");
         }
       } catch (error) {
         console.error("Failed to load the model:", error);
         setError(`Failed to load the object detection model: ${error.message}. Please check the model file in settings and try again.`);
+        toast({
+          variant: "destructive",
+          title: "Model Load Error",
+          description: error.message,
+        });
       }
     };
 

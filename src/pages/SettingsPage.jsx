@@ -31,6 +31,18 @@ const SettingsPage = () => {
             content: new Uint8Array(fileContent),
           },
         });
+        toast({
+          title: "Model File Uploaded",
+          description: `File "${file.name}" has been uploaded. Please save settings to apply.`,
+        });
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        toast({
+          variant: "destructive",
+          title: "Upload Error",
+          description: "Failed to read the model file. Please try again.",
+        });
       };
       reader.readAsArrayBuffer(file);
     }

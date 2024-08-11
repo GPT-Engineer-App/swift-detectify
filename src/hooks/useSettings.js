@@ -62,24 +62,29 @@ export function useSettings() {
     
     const modelFile = await getModelFile(settings.modelFileName);
     if (!modelFile) {
-      console.error('Model file not found');
-      return null;
+      console.error('Model file not found in IndexedDB');
+      throw new Error('Model file not found. Please upload a model file in the settings.');
     }
 
     try {
       const modelArrayBuffer = modelFile instanceof Uint8Array ? modelFile.buffer : modelFile;
       
+      console.log('Model file size:', modelArrayBuffer.byteLength, 'bytes');
+      console.log('First few bytes:', new Uint8Array(modelArrayBuffer.slice(0, 10)));
+
       // Check if it's a compressed file (ZIP)
       if (modelArrayBuffer.byteLength > 2 && new Uint8Array(modelArrayBuffer.slice(0, 2)).every((v, i) => v === [0x50, 0x4B][i])) {
         console.log('Detected compressed model file. Attempting to unzip...');
         const { unzipSync } = await import('fflate');
         const unzipped = unzipSync(new Uint8Array(modelArrayBuffer));
         
+        console.log('Unzipped files:', Object.keys(unzipped));
+
         // Assume the main model file is named 'model.json' or ends with '.onnx'
         const modelEntry = Object.entries(unzipped).find(([name]) => name === 'model.json' || name.endsWith('.onnx'));
         
         if (!modelEntry) {
-          throw new Error('No valid model file found in the compressed archive');
+          throw new Error('No valid model file found in the compressed archive. Expected "model.json" or a file ending with ".onnx".');
         }
         
         const [fileName, fileContent] = modelEntry;
@@ -93,6 +98,7 @@ export function useSettings() {
           console.log('ONNX model loaded successfully from compressed file');
         } else {
           const modelJson = JSON.parse(new TextDecoder().decode(fileContent));
+          console.log('Model JSON structure:', Object.keys(modelJson));
           const modelArtifacts = {
             modelTopology: modelJson.modelTopology,
             weightSpecs: modelJson.weightSpecs,
@@ -119,6 +125,7 @@ export function useSettings() {
         } else {
           // Assume it's a TensorFlow.js model
           const modelJson = JSON.parse(new TextDecoder().decode(modelArrayBuffer));
+          console.log('Model JSON structure:', Object.keys(modelJson));
           const modelArtifacts = {
             modelTopology: modelJson.modelTopology,
             weightSpecs: modelJson.weightSpecs,
@@ -137,7 +144,7 @@ export function useSettings() {
       return loadedModel;
     } catch (error) {
       console.error('Failed to load the model:', error);
-      return null;
+      throw error; // Re-throw the error to be caught by the caller
     }
   };
 
