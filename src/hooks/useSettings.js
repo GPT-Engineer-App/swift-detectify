@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { openDB } from 'idb';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
 
 const defaultSettings = {
   detectionThreshold: 0.3,
   updateInterval: 500,
   modelFileName: null,
 };
+
+let loadedModel = null;
 
 const dbPromise = openDB('SettingsDB', 1, {
   upgrade(db) {
@@ -52,5 +56,23 @@ export function useSettings() {
     return await db.get('modelFiles', fileName);
   };
 
-  return { settings, updateSettings, getModelFile };
+  const loadModel = async () => {
+    if (loadedModel) return loadedModel;
+    
+    const modelFile = await getModelFile(settings.modelFileName);
+    if (!modelFile) return null;
+
+    try {
+      const modelArrayBuffer = modelFile instanceof Uint8Array ? modelFile : new Uint8Array(modelFile);
+      const modelJson = JSON.parse(new TextDecoder().decode(modelArrayBuffer));
+      loadedModel = await tf.loadGraphModel(tf.io.fromMemory(modelJson));
+      console.log('TensorFlow.js model loaded successfully');
+      return loadedModel;
+    } catch (error) {
+      console.error('Failed to load the TensorFlow.js model:', error);
+      return null;
+    }
+  };
+
+  return { settings, updateSettings, getModelFile, loadModel };
 }

@@ -1,39 +1,9 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
 
-let model;
-
-export async function loadModel(modelFile) {
-  try {
-    if (!modelFile || !modelFile.content) {
-      throw new Error('Model file is missing or invalid');
-    }
-
-    const modelArrayBuffer = modelFile.content instanceof Uint8Array ? modelFile.content : new Uint8Array(modelFile.content.split(',').map(Number));
-    
-    // Check if the model file is valid
-    if (modelArrayBuffer.length === 0) {
-      throw new Error('Model file is empty');
-    }
-
-    // Attempt to parse the model as JSON to check if it's a valid TensorFlow.js model
-    try {
-      JSON.parse(new TextDecoder().decode(modelArrayBuffer));
-    } catch (jsonError) {
-      throw new Error('Invalid model file format. Please ensure you are uploading a valid TensorFlow.js model file.');
-    }
-
-    model = await tf.loadGraphModel(tf.io.browserFiles([new File([modelArrayBuffer], 'model.json')]));
-    console.log('TensorFlow.js model loaded successfully');
-  } catch (error) {
-    console.error('Failed to load the TensorFlow.js model:', error);
-    throw new Error(`Failed to load the TensorFlow.js model: ${error.message}`);
-  }
-}
-
-export async function detectObjects(imageData, confidenceThreshold) {
+export async function detectObjects(imageData, confidenceThreshold, model) {
   if (!model) {
-    throw new Error('Model not loaded. Call loadModel() first.');
+    throw new Error('Model not provided. Make sure the model is loaded.');
   }
 
   try {

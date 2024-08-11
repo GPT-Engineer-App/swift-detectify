@@ -31,7 +31,7 @@ const Index = () => {
   const [error, setError] = useState(null);
   const videoRef = useRef(null);
   const { toast } = useToast();
-  const { settings, getModelFile } = useSettings();
+  const { settings, loadModel } = useSettings();
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -42,30 +42,25 @@ const Index = () => {
 
     // Load the TensorFlow.js model
     const loadModelFile = async () => {
-      if (settings.modelFileName) {
-        try {
-          const modelFile = await getModelFile(settings.modelFileName);
-          if (modelFile) {
-            await loadModel(modelFile);
-            setError(null); // Clear any previous errors
-            toast({
-              title: "Model Loaded",
-              description: "Object detection model loaded successfully.",
-            });
-          } else {
-            setError("Model file not found. Please upload the TensorFlow.js model file in settings.");
-          }
-        } catch (error) {
-          console.error("Failed to load the model:", error);
-          setError(`Failed to load the object detection model: ${error.message}. Please check the model file in settings and try again.`);
+      try {
+        const model = await loadModel();
+        if (model) {
+          setError(null); // Clear any previous errors
+          toast({
+            title: "Model Loaded",
+            description: "Object detection model loaded successfully.",
+          });
+        } else {
+          setError("Model file not found or invalid. Please upload a valid TensorFlow.js model file in settings.");
         }
-      } else {
-        setError("Model file is not set. Please upload the TensorFlow.js model file in settings.");
+      } catch (error) {
+        console.error("Failed to load the model:", error);
+        setError(`Failed to load the object detection model: ${error.message}. Please check the model file in settings and try again.`);
       }
     };
 
     loadModelFile();
-  }, [settings.modelFileName, getModelFile, toast]);
+  }, [loadModel, toast]);
 
   useEffect(() => {
     saveCountsToIndexedDB(counts);
