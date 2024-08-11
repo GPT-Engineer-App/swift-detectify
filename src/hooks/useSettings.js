@@ -13,13 +13,28 @@ export function useSettings() {
   useEffect(() => {
     const storedSettings = localStorage.getItem('appSettings');
     if (storedSettings) {
-      setSettings(JSON.parse(storedSettings));
+      try {
+        const parsedSettings = JSON.parse(storedSettings);
+        setSettings(prevSettings => ({
+          ...prevSettings,
+          ...parsedSettings,
+          detectionThreshold: parseFloat(parsedSettings.detectionThreshold) || 0.3,
+          updateInterval: parseInt(parsedSettings.updateInterval, 10) || 500,
+        }));
+      } catch (error) {
+        console.error('Error parsing stored settings:', error);
+      }
     }
   }, []);
 
   const updateSettings = (newSettings) => {
-    setSettings(newSettings);
-    localStorage.setItem('appSettings', JSON.stringify(newSettings));
+    const updatedSettings = {
+      ...newSettings,
+      detectionThreshold: parseFloat(newSettings.detectionThreshold),
+      updateInterval: parseInt(newSettings.updateInterval, 10),
+    };
+    setSettings(updatedSettings);
+    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
   };
 
   return { settings, updateSettings };

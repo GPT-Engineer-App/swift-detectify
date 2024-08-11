@@ -4,9 +4,13 @@ let session;
 
 export async function loadModel(modelFile, weightsFile, argsFile) {
   try {
+    if (!modelFile || !modelFile.content) {
+      throw new Error('Model file is missing or invalid');
+    }
+
     const modelArrayBuffer = modelFile.content;
-    const weightsArrayBuffer = weightsFile ? weightsFile.content : null;
-    const argsJson = argsFile ? JSON.parse(new TextDecoder().decode(argsFile.content)) : {};
+    const weightsArrayBuffer = weightsFile && weightsFile.content;
+    const argsJson = argsFile && argsFile.content ? JSON.parse(new TextDecoder().decode(argsFile.content)) : {};
 
     const options = {
       executionProviders: ['wasm'],

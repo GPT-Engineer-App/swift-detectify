@@ -37,7 +37,12 @@ const SettingsPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateSettings(settings);
+    const updatedSettings = {
+      ...settings,
+      detectionThreshold: parseFloat(settings.detectionThreshold),
+      updateInterval: parseInt(settings.updateInterval, 10),
+    };
+    updateSettings(updatedSettings);
     toast({
       title: "Settings Updated",
       description: "Your settings have been saved successfully.",
