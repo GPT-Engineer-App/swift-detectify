@@ -111,6 +111,12 @@ const Index = () => {
     const detectFrame = async () => {
       if (videoRef.current && isDetecting) {
         try {
+          if (!videoRef.current.videoWidth || !videoRef.current.videoHeight) {
+            console.log("Video dimensions not available yet. Retrying...");
+            requestAnimationFrame(detectFrame);
+            return;
+          }
+
           const canvas = document.createElement('canvas');
           canvas.width = videoRef.current.videoWidth;
           canvas.height = videoRef.current.videoHeight;
@@ -123,7 +129,6 @@ const Index = () => {
           updateCounts(detectedObjects);
           setError(null);
 
-          // Use the settings.updateInterval for the delay
           await new Promise(resolve => setTimeout(resolve, settings.updateInterval));
           
           if (isDetecting) {
