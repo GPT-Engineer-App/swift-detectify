@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Square, Settings, History, Info } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -14,23 +14,26 @@ const Index = () => {
     carton: 0
   });
 
-  // Simulating real-time updates
-  const startDetection = () => {
-    setIsDetecting(true);
-    const interval = setInterval(() => {
-      setCounts(prevCounts => ({
-        glass: prevCounts.glass + Math.floor(Math.random() * 2),
-        can: prevCounts.can + Math.floor(Math.random() * 2),
-        pet1: prevCounts.pet1 + Math.floor(Math.random() * 2),
-        hdpe2: prevCounts.hdpe2 + Math.floor(Math.random() * 2),
-        carton: prevCounts.carton + Math.floor(Math.random() * 2)
-      }));
-    }, 2000);
-    return () => clearInterval(interval);
-  };
+  const updateCounts = useCallback(() => {
+    setCounts(prevCounts => ({
+      glass: prevCounts.glass + Math.floor(Math.random() * 2),
+      can: prevCounts.can + Math.floor(Math.random() * 2),
+      pet1: prevCounts.pet1 + Math.floor(Math.random() * 2),
+      hdpe2: prevCounts.hdpe2 + Math.floor(Math.random() * 2),
+      carton: prevCounts.carton + Math.floor(Math.random() * 2)
+    }));
+  }, []);
 
-  const stopDetection = () => {
-    setIsDetecting(false);
+  useEffect(() => {
+    let interval;
+    if (isDetecting) {
+      interval = setInterval(updateCounts, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isDetecting, updateCounts]);
+
+  const toggleDetection = () => {
+    setIsDetecting(prev => !prev);
   };
 
   const chartData = [
@@ -68,7 +71,7 @@ const Index = () => {
       </div>
 
       <div className="flex justify-center space-x-4 mb-6">
-        <Button onClick={isDetecting ? stopDetection : startDetection} className="w-32">
+        <Button onClick={toggleDetection} className="w-32">
           {isDetecting ? <><Square className="mr-2 h-4 w-4" /> Stop</> : <><Play className="mr-2 h-4 w-4" /> Start</>}
         </Button>
         <Button variant="outline" className="w-32">
@@ -87,14 +90,16 @@ const Index = () => {
           <CardTitle>Object Count Visualization</CardTitle>
         </CardHeader>
         <CardContent>
-          <BarChart width={600} height={300} data={chartData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="count" fill="#8884d8" />
-          </BarChart>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
     </div>
