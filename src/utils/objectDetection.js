@@ -1,5 +1,4 @@
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-backend-webgl';
+import * as ort from 'onnxruntime-web';
 
 let model;
 
@@ -10,14 +9,12 @@ export async function loadModel(modelFile) {
     }
 
     const modelArrayBuffer = modelFile.content;
-    const modelBlob = new Blob([modelArrayBuffer], { type: 'application/octet-stream' });
-    const modelUrl = URL.createObjectURL(modelBlob);
-
-    model = await tf.loadGraphModel(modelUrl);
-    console.log('PyTorch model loaded successfully');
+    const session = await ort.InferenceSession.create(modelArrayBuffer);
+    model = session;
+    console.log('ONNX model loaded successfully');
   } catch (error) {
-    console.error('Failed to load the PyTorch model:', error);
-    throw new Error(`Failed to load the PyTorch model: ${error.message}`);
+    console.error('Failed to load the ONNX model:', error);
+    throw new Error(`Failed to load the ONNX model: ${error.message}`);
   }
 }
 
@@ -31,10 +28,11 @@ export async function detectObjects(imageData, confidenceThreshold) {
     const tensor = await preprocessImage(imageData);
 
     // Run inference
-    const predictions = await model.predict(tensor);
+    const feeds = { input: tensor };
+    const results = await model.run(feeds);
 
     // Process results
-    const [boxes, scores, classes] = await processResults(predictions);
+    const [boxes, scores, classes] = processResults(results);
 
     // Filter predictions based on confidence threshold
     const detections = [];
@@ -57,14 +55,23 @@ export async function detectObjects(imageData, confidenceThreshold) {
 
 async function preprocessImage(imageData) {
   // Convert base64 to image
-  const img = await tf.browser.fromPixels(await createImageBitmap(dataURItoBlob(imageData)));
+  const img = await createImageBitmap(dataURItoBlob(imageData));
+  const canvas = document.createElement('canvas');
+  canvas.width = 640;
+  canvas.height = 640;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, 640, 640);
+  const imageData = ctx.getImageData(0, 0, 640, 640);
   
-  // Resize and normalize the image
-  const resized = tf.image.resizeBilinear(img, [640, 640]);
-  const normalized = resized.div(255.0);
+  // Normalize the image
+  const float32Data = new Float32Array(imageData.data.length / 4 * 3);
+  for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
+    float32Data[j] = imageData.data[i] / 255.0;
+    float32Data[j + 1] = imageData.data[i + 1] / 255.0;
+    float32Data[j + 2] = imageData.data[i + 2] / 255.0;
+  }
   
-  // Add batch dimension
-  return normalized.expandDims(0);
+  return new ort.Tensor('float32', float32Data, [1, 3, 640, 640]);
 }
 
 async function processResults(predictions) {
