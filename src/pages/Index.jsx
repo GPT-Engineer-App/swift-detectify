@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
 import { detectObjects, loadModel } from '../utils/objectDetection';
+import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -24,7 +25,7 @@ const Index = () => {
         .catch(error => console.error('Service Worker registration failed:', error));
     }
 
-    // Load the TensorFlow.js model
+    // Load the ONNX model
     if (settings.modelPath) {
       loadModel(settings.modelPath).catch(error => {
         console.error("Failed to load the model:", error);

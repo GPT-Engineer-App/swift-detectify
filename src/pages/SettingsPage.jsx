@@ -68,7 +68,7 @@ const SettingsPage = () => {
                 type="text"
                 value={settings.modelPath}
                 onChange={handleChange}
-                placeholder="C:\path\to\your\model.json"
+                placeholder="/path/to/your/model.onnx"
               />
             </div>
             <Button type="submit">Save Settings</Button>

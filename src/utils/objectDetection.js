@@ -1,44 +1,41 @@
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-backend-webgl';
+import * as ort from 'onnxruntime-web';
 
-let model;
+let session;
 
 export async function loadModel(modelPath) {
   try {
-    model = await tf.loadGraphModel(`file://${modelPath}`);
-    console.log('Model loaded successfully');
+    session = await ort.InferenceSession.create(modelPath);
+    console.log('ONNX model loaded successfully');
   } catch (error) {
-    console.error('Failed to load the model:', error);
-    throw new Error(`Failed to load the model: ${error.message}`);
+    console.error('Failed to load the ONNX model:', error);
+    throw new Error(`Failed to load the ONNX model: ${error.message}`);
   }
 }
 
 export async function detectObjects(imageData, confidenceThreshold) {
-  if (!model) {
-    await loadModel();
+  if (!session) {
+    throw new Error('Model not loaded. Call loadModel() first.');
   }
 
   try {
-    // Convert base64 image to tensor
-    const imgTensor = tf.browser.fromPixels(await createImageBitmap(dataURItoBlob(imageData)));
-    const input = tf.image.resizeBilinear(imgTensor, [224, 224]).div(255.0).expandDims();
+    // Preprocess the image
+    const tensor = await preprocessImage(imageData);
 
     // Run inference
-    const predictions = await model.executeAsync(input);
+    const feeds = { images: tensor };
+    const results = await session.run(feeds);
 
-    // Process predictions
-    const boxes = await predictions[0].array();
-    const scores = await predictions[1].array();
-    const classes = await predictions[2].array();
+    // Process results
+    const [boxes, scores, classes] = processResults(results);
 
     // Filter predictions based on confidence threshold
     const detections = [];
-    for (let i = 0; i < scores[0].length; i++) {
-      if (scores[0][i] > confidenceThreshold) {
+    for (let i = 0; i < scores.length; i++) {
+      if (scores[i] > confidenceThreshold) {
         detections.push({
-          class: getClassName(classes[0][i]),
-          confidence: scores[0][i],
-          bbox: boxes[0][i]
+          class: getClassName(classes[i]),
+          confidence: scores[i],
+          bbox: boxes[i]
         });
       }
     }
@@ -48,6 +45,19 @@ export async function detectObjects(imageData, confidenceThreshold) {
     console.error("Error detecting objects:", error);
     throw new Error(`Unexpected error during object detection: ${error.message}`);
   }
+}
+
+async function preprocessImage(imageData) {
+  // Implement image preprocessing here
+  // This should convert the image to the format expected by your ONNX model
+  // You may need to resize, normalize, and convert to the correct data type
+  // Return a tensor in the format expected by your model
+}
+
+function processResults(results) {
+  // Implement result processing here
+  // This should extract boxes, scores, and classes from the model output
+  // Return [boxes, scores, classes]
 }
 
 function dataURItoBlob(dataURI) {
@@ -62,13 +72,13 @@ function dataURItoBlob(dataURI) {
 }
 
 function getClassName(classId) {
-  // Map class IDs to class names based on your model's classes
+  // Update this mapping based on your custom model's classes
   const classMap = {
-    1: 'glass',
-    2: 'can',
-    3: 'pet1',
-    4: 'hdpe2',
-    5: 'carton'
+    0: 'glass',
+    1: 'can',
+    2: 'pet1',
+    3: 'hdpe2',
+    4: 'carton'
   };
   return classMap[classId] || 'unknown';
 }
