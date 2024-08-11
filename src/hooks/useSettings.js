@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { openDB } from 'idb';
+import { openDB } from 'idb/with-async-ittr';
 
 const defaultSettings = {
   detectionThreshold: 0.3,
@@ -9,8 +9,12 @@ const defaultSettings = {
 
 const dbPromise = openDB('SettingsDB', 1, {
   upgrade(db) {
-    db.createObjectStore('settings');
-    db.createObjectStore('modelFiles');
+    if (!db.objectStoreNames.contains('settings')) {
+      db.createObjectStore('settings');
+    }
+    if (!db.objectStoreNames.contains('modelFiles')) {
+      db.createObjectStore('modelFiles');
+    }
   },
 });
 
@@ -32,12 +36,12 @@ export function useSettings() {
     const updatedSettings = {
       detectionThreshold: parseFloat(newSettings.detectionThreshold) || defaultSettings.detectionThreshold,
       updateInterval: parseInt(newSettings.updateInterval, 10) || defaultSettings.updateInterval,
-      modelFileName: newSettings.modelFile ? newSettings.modelFile.name : null,
+      modelFileName: newSettings.modelFile ? newSettings.modelFile.name : settings.modelFileName,
     };
     setSettings(updatedSettings);
     const db = await dbPromise;
     await db.put('settings', updatedSettings, 'appSettings');
-    if (newSettings.modelFile) {
+    if (newSettings.modelFile && newSettings.modelFile.content) {
       await db.put('modelFiles', newSettings.modelFile.content, newSettings.modelFile.name);
     }
   };
