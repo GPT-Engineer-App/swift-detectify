@@ -8,7 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { saveCountsToIndexedDB, getCountsFromIndexedDB } from '../utils/localStorage';
-import { detectObjects, loadModel } from '../utils/objectDetection';
+import { detectObjects } from '../utils/objectDetection';
 import { useSettings } from '../hooks/useSettings';
 
 const Index = () => {
@@ -20,11 +20,10 @@ const Index = () => {
     hdpe2: 0,
     carton: 0
   });
-  const [model, setModel] = useState(null);
   const [error, setError] = useState(null);
   const videoRef = useRef(null);
   const { toast } = useToast();
-  const { settings, getModelFile } = useSettings();
+  const { settings, loadModel } = useSettings();
 
   useEffect(() => {
     const loadCounts = async () => {
@@ -44,17 +43,15 @@ const Index = () => {
     // Load the TensorFlow.js model
     const loadModelFile = async () => {
       try {
-        const modelFile = await getModelFile(settings.modelFileName);
-        if (modelFile) {
-          const loadedModel = await loadModel(modelFile);
-          setModel(loadedModel);
+        const loadedModel = await loadModel();
+        if (loadedModel) {
           setError(null); // Clear any previous errors
           toast({
             title: "Model Loaded",
             description: "Object detection model loaded successfully.",
           });
         } else {
-          setError("Model file not found. Please upload a valid TensorFlow.js model file in settings.");
+          setError("Model file not found or failed to load. Please upload a valid TensorFlow.js model file in settings.");
         }
       } catch (error) {
         console.error("Failed to load the model:", error);
@@ -63,7 +60,7 @@ const Index = () => {
     };
 
     loadModelFile();
-  }, [settings.modelFileName, getModelFile, toast]);
+  }, [loadModel, toast]);
 
   useEffect(() => {
     saveCountsToIndexedDB(counts);
@@ -127,7 +124,11 @@ const Index = () => {
           const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
           
           console.log("Sending image data for detection...");
-          const detectedObjects = await detectObjects(imageData, settings.detectionThreshold);
+          const model = await loadModel();
+          if (!model) {
+            throw new Error("Model not loaded. Please check your settings and try again.");
+          }
+          const detectedObjects = await detectObjects(imageData, settings.detectionThreshold, model);
           console.log("Detected objects:", detectedObjects);
           updateCounts(detectedObjects);
           setError(null);
