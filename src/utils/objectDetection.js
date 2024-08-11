@@ -1,22 +1,24 @@
-import axios from 'axios';
-
-export async function detectObjects(imageData) {
+self.detectObjects = async function(imageData) {
   try {
-    const response = await axios({
+    const response = await fetch("https://detect.roboflow.com/cds-depot-counter-ivjbi/1", {
       method: "POST",
-      url: "https://detect.roboflow.com/cds-depot-counter-ivjbi/1",
-      params: {
-        api_key: "gpvPQE3wHQT6oVIkSX4k"
-      },
-      data: imageData,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
-      }
+      },
+      body: new URLSearchParams({
+        api_key: "gpvPQE3wHQT6oVIkSX4k",
+        image: imageData
+      })
     });
 
-    return response.data.predictions;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.predictions;
   } catch (error) {
     console.error("Error detecting objects:", error);
     throw error;
   }
-}
+};
