@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { openDB } from 'idb/with-async-ittr';
+import { openDB } from 'idb';
 
 const defaultSettings = {
   detectionThreshold: 0.3,

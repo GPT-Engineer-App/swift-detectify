@@ -1,4 +1,4 @@
-import { openDB } from 'idb/with-async-ittr';
+import { openDB } from 'idb';
 
 const dbPromise = openDB('RecyclingDB', 1, {
   upgrade(db) {
