@@ -1,7 +1,16 @@
-self.importScripts('../utils/objectDetection.js');
+importScripts('../utils/objectDetection.js');
 
 self.onmessage = async (event) => {
   const { image } = event.data;
-  const detectedObjects = await self.detectObjects(image);
-  self.postMessage(detectedObjects);
+  try {
+    const detectedObjects = await self.detectObjects(image);
+    const processedObjects = detectedObjects.map(obj => ({
+      class: obj.class,
+      confidence: obj.confidence,
+      bbox: obj.bbox
+    }));
+    self.postMessage(processedObjects);
+  } catch (error) {
+    self.postMessage({ error: error.message });
+  }
 };

@@ -71,8 +71,15 @@ const Index = () => {
   const startDetection = () => {
     const worker = new Worker(new URL('../workers/detectionWorker.js', import.meta.url));
     worker.onmessage = (event) => {
-      const detectedObjects = event.data;
-      updateCounts(detectedObjects);
+      if (event.data.error) {
+        setError(event.data.error);
+        setIsDetecting(false);
+        stopCamera();
+      } else {
+        const detectedObjects = event.data;
+        updateCounts(detectedObjects);
+        setError(null);
+      }
     };
 
     const detectFrame = () => {
@@ -81,7 +88,7 @@ const Index = () => {
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg');
+        const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
         worker.postMessage({ image: imageData });
         requestAnimationFrame(detectFrame);
       }
