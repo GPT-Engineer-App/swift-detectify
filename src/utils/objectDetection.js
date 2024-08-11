@@ -16,7 +16,14 @@ export async function detectObjects(imageData) {
     }
 
     const data = await response.json();
-    return data.predictions;
+    return data.predictions.map(prediction => ({
+      class: prediction.class,
+      confidence: prediction.confidence,
+      x: prediction.x,
+      y: prediction.y,
+      width: prediction.width,
+      height: prediction.height
+    }));
   } catch (error) {
     console.error("Error detecting objects:", error);
     throw error;
