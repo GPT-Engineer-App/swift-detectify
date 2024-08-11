@@ -4,10 +4,7 @@ export function useSettings() {
   const [settings, setSettings] = useState({
     detectionThreshold: 0.3,
     updateInterval: 500,
-    modelFolder: null,
     modelFile: null,
-    weightsFile: null,
-    argsFile: null,
   });
 
   useEffect(() => {

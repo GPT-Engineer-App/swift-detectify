@@ -84,44 +84,13 @@ const SettingsPage = () => {
               />
             </div>
             <div className="mb-4">
-              <Label htmlFor="modelFolder">Model Folder</Label>
-              <Input
-                id="modelFolder"
-                name="modelFolder"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'modelFolder')}
-                webkitdirectory="true"
-                directory="true"
-                multiple
-              />
-            </div>
-            <div className="mb-4">
               <Label htmlFor="modelFile">Model File</Label>
               <Input
                 id="modelFile"
                 name="modelFile"
                 type="file"
                 onChange={(e) => handleFileChange(e, 'modelFile')}
-                accept=".onnx"
-              />
-            </div>
-            <div className="mb-4">
-              <Label htmlFor="weightsFile">Weights File</Label>
-              <Input
-                id="weightsFile"
-                name="weightsFile"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'weightsFile')}
-              />
-            </div>
-            <div className="mb-4">
-              <Label htmlFor="argsFile">Arguments File</Label>
-              <Input
-                id="argsFile"
-                name="argsFile"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'argsFile')}
-                accept=".json"
+                accept=".pt"
               />
             </div>
             <Button type="submit">Save Settings</Button>

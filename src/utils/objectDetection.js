@@ -1,36 +1,28 @@
-import * as ort from 'onnxruntime-web';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
 
-let session;
+let model;
 
-export async function loadModel(modelFile, weightsFile, argsFile) {
+export async function loadModel(modelFile) {
   try {
     if (!modelFile || !modelFile.content) {
       throw new Error('Model file is missing or invalid');
     }
 
     const modelArrayBuffer = modelFile.content;
-    const weightsArrayBuffer = weightsFile && weightsFile.content;
-    const argsJson = argsFile && argsFile.content ? JSON.parse(new TextDecoder().decode(argsFile.content)) : {};
+    const modelBlob = new Blob([modelArrayBuffer], { type: 'application/octet-stream' });
+    const modelUrl = URL.createObjectURL(modelBlob);
 
-    const options = {
-      executionProviders: ['wasm'],
-      ...argsJson,
-    };
-
-    if (weightsArrayBuffer) {
-      options.loadedWeights = new Uint8Array(weightsArrayBuffer);
-    }
-
-    session = await ort.InferenceSession.create(modelArrayBuffer, options);
-    console.log('ONNX model loaded successfully');
+    model = await tf.loadGraphModel(modelUrl);
+    console.log('PyTorch model loaded successfully');
   } catch (error) {
-    console.error('Failed to load the ONNX model:', error);
-    throw new Error(`Failed to load the ONNX model: ${error.message}`);
+    console.error('Failed to load the PyTorch model:', error);
+    throw new Error(`Failed to load the PyTorch model: ${error.message}`);
   }
 }
 
 export async function detectObjects(imageData, confidenceThreshold) {
-  if (!session) {
+  if (!model) {
     throw new Error('Model not loaded. Call loadModel() first.');
   }
 
@@ -39,11 +31,10 @@ export async function detectObjects(imageData, confidenceThreshold) {
     const tensor = await preprocessImage(imageData);
 
     // Run inference
-    const feeds = { images: tensor };
-    const results = await session.run(feeds);
+    const predictions = await model.predict(tensor);
 
     // Process results
-    const [boxes, scores, classes] = processResults(results);
+    const [boxes, scores, classes] = await processResults(predictions);
 
     // Filter predictions based on confidence threshold
     const detections = [];
@@ -65,16 +56,24 @@ export async function detectObjects(imageData, confidenceThreshold) {
 }
 
 async function preprocessImage(imageData) {
-  // Implement image preprocessing here
-  // This should convert the image to the format expected by your ONNX model
-  // You may need to resize, normalize, and convert to the correct data type
-  // Return a tensor in the format expected by your model
+  // Convert base64 to image
+  const img = await tf.browser.fromPixels(await createImageBitmap(dataURItoBlob(imageData)));
+  
+  // Resize and normalize the image
+  const resized = tf.image.resizeBilinear(img, [640, 640]);
+  const normalized = resized.div(255.0);
+  
+  // Add batch dimension
+  return normalized.expandDims(0);
 }
 
-function processResults(results) {
-  // Implement result processing here
-  // This should extract boxes, scores, and classes from the model output
-  // Return [boxes, scores, classes]
+async function processResults(predictions) {
+  // Extract boxes, scores, and classes from the model output
+  const boxes = await predictions[0].array();
+  const scores = await predictions[1].array();
+  const classes = await predictions[2].array();
+
+  return [boxes[0], scores[0], classes[0]];
 }
 
 function dataURItoBlob(dataURI) {
