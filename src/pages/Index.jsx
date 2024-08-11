@@ -40,27 +40,32 @@ const Index = () => {
         .catch(error => console.error('Service Worker registration failed:', error));
     }
 
-    // Load the PyTorch model
+    // Load the TensorFlow.js model
     const loadModelFile = async () => {
       if (settings.modelFileName) {
         try {
           const modelFile = await getModelFile(settings.modelFileName);
           if (modelFile) {
             await loadModel(modelFile);
+            setError(null); // Clear any previous errors
+            toast({
+              title: "Model Loaded",
+              description: "Object detection model loaded successfully.",
+            });
           } else {
-            setError("Model file not found. Please upload the PyTorch model file in settings.");
+            setError("Model file not found. Please upload the TensorFlow.js model file in settings.");
           }
         } catch (error) {
           console.error("Failed to load the model:", error);
-          setError("Failed to load the object detection model. Please check the model file in settings and try again.");
+          setError(`Failed to load the object detection model: ${error.message}. Please check the model file in settings and try again.`);
         }
       } else {
-        setError("Model file is not set. Please upload the PyTorch model file in settings.");
+        setError("Model file is not set. Please upload the TensorFlow.js model file in settings.");
       }
     };
 
     loadModelFile();
-  }, [settings.modelFileName, getModelFile]);
+  }, [settings.modelFileName, getModelFile, toast]);
 
   useEffect(() => {
     saveCountsToIndexedDB(counts);
