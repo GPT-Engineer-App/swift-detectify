@@ -4,7 +4,7 @@ export async function detectObjects(imageData) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer gpvPQE3wHQT6oVIkSX4k"
+        "Authorization": "Bearer YOUR_ACTUAL_API_KEY_HERE"
       },
       body: JSON.stringify({
         image: imageData

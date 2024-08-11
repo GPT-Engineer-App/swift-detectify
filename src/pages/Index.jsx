@@ -94,6 +94,9 @@ const Index = () => {
             description: `An error occurred during object detection: ${error.message}`,
           });
         }
+
+        // Add a small delay to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         if (isDetecting) {
           requestAnimationFrame(detectFrame);
@@ -112,10 +115,14 @@ const Index = () => {
     setCounts(prevCounts => {
       const newCounts = { ...prevCounts };
       detectedObjects.forEach(obj => {
-        if (newCounts.hasOwnProperty(obj.class)) {
-          newCounts[obj.class]++;
+        const className = obj.class.toLowerCase();
+        if (newCounts.hasOwnProperty(className)) {
+          newCounts[className]++;
+        } else {
+          console.warn(`Unknown object class detected: ${obj.class}`);
         }
       });
+      console.log("Updated counts:", newCounts);
       return newCounts;
     });
   };
