@@ -3,8 +3,14 @@ import '@tensorflow/tfjs-backend-webgl';
 
 let model;
 
-export async function loadModel() {
-  model = await tf.loadGraphModel('path/to/your/model.json');
+export async function loadModel(modelPath) {
+  try {
+    model = await tf.loadGraphModel(`file://${modelPath}`);
+    console.log('Model loaded successfully');
+  } catch (error) {
+    console.error('Failed to load the model:', error);
+    throw new Error(`Failed to load the model: ${error.message}`);
+  }
 }
 
 export async function detectObjects(imageData, confidenceThreshold) {

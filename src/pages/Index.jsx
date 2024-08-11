@@ -25,11 +25,15 @@ const Index = () => {
     }
 
     // Load the TensorFlow.js model
-    loadModel().catch(error => {
-      console.error("Failed to load the model:", error);
-      setError("Failed to load the object detection model. Please refresh the page and try again.");
-    });
-  }, []);
+    if (settings.modelPath) {
+      loadModel(settings.modelPath).catch(error => {
+        console.error("Failed to load the model:", error);
+        setError("Failed to load the object detection model. Please check the model path in settings and try again.");
+      });
+    } else {
+      setError("Model path is not set. Please set the model path in settings.");
+    }
+  }, [settings.modelPath]);
 
   useEffect(() => {
     saveCountsToLocalStorage(counts);

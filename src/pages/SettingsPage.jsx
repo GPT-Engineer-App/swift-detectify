@@ -10,9 +10,10 @@ const SettingsPage = () => {
   const { toast } = useToast();
 
   const handleChange = (e) => {
+    const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
     updateSettings({
       ...settings,
-      [e.target.name]: parseFloat(e.target.value),
+      [e.target.name]: value,
     });
   };
 
@@ -57,6 +58,17 @@ const SettingsPage = () => {
                 onChange={handleChange}
                 min="500"
                 step="500"
+              />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="modelPath">Model Path</Label>
+              <Input
+                id="modelPath"
+                name="modelPath"
+                type="text"
+                value={settings.modelPath}
+                onChange={handleChange}
+                placeholder="C:\path\to\your\model.json"
               />
             </div>
             <Button type="submit">Save Settings</Button>
