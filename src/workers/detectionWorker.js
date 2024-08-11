@@ -1,9 +1,9 @@
-importScripts('../utils/objectDetection.js');
+import { detectObjects } from '../utils/objectDetection.js';
 
 self.onmessage = async (event) => {
   const { image } = event.data;
   try {
-    const detectedObjects = await self.detectObjects(image);
+    const detectedObjects = await detectObjects(image);
     const processedObjects = detectedObjects.map(obj => ({
       class: obj.class,
       confidence: obj.confidence,

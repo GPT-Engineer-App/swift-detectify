@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-async function detectObjects(imageData) {
+export async function detectObjects(imageData) {
   try {
     const response = await axios({
       method: "POST",
@@ -20,6 +20,3 @@ async function detectObjects(imageData) {
     throw error;
   }
 }
-
-// Expose the detectObjects function to the global scope
-self.detectObjects = detectObjects;

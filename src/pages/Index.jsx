@@ -5,7 +5,6 @@ import { Play, Square, Settings, History, Info, AlertCircle, Camera } from "luci
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
-import { detectObjects } from '../utils/objectDetection';
 import { saveCountsToLocalStorage, getCountsFromLocalStorage } from '../utils/localStorage';
 
 const Index = () => {
@@ -76,9 +75,14 @@ const Index = () => {
         setIsDetecting(false);
         stopCamera();
       } else {
-        const detectedObjects = event.data;
-        updateCounts(detectedObjects);
-        setError(null);
+        try {
+          const detectedObjects = JSON.parse(event.data);
+          updateCounts(detectedObjects);
+          setError(null);
+        } catch (error) {
+          console.error("Failed to parse worker message:", error);
+          setError("Failed to process detection results");
+        }
       }
     };
 
