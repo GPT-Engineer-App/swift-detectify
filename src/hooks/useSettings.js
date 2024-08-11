@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { openDB } from 'idb';
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
+import * as ort from 'onnxruntime-web';
 
 const defaultSettings = {
   detectionThreshold: 0.3,
@@ -64,12 +65,27 @@ export function useSettings() {
 
     try {
       const modelArrayBuffer = modelFile instanceof Uint8Array ? modelFile : new Uint8Array(modelFile);
-      const modelJson = JSON.parse(new TextDecoder().decode(modelArrayBuffer));
-      loadedModel = await tf.loadGraphModel(tf.io.fromMemory(modelJson));
-      console.log('TensorFlow.js model loaded successfully');
+      
+      // Check if it's an ONNX model
+      if (settings.modelFileName.endsWith('.onnx')) {
+        const session = await ort.InferenceSession.create(modelArrayBuffer);
+        loadedModel = {
+          type: 'onnx',
+          session: session
+        };
+        console.log('ONNX model loaded successfully');
+      } else {
+        // Assume it's a TensorFlow.js model
+        const modelJson = JSON.parse(new TextDecoder().decode(modelArrayBuffer));
+        loadedModel = {
+          type: 'tfjs',
+          model: await tf.loadGraphModel(tf.io.fromMemory(modelJson))
+        };
+        console.log('TensorFlow.js model loaded successfully');
+      }
       return loadedModel;
     } catch (error) {
-      console.error('Failed to load the TensorFlow.js model:', error);
+      console.error('Failed to load the model:', error);
       return null;
     }
   };

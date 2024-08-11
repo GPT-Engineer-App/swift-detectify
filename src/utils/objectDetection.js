@@ -14,8 +14,22 @@ export async function detectObjects(imageData, confidenceThreshold, model) {
       throw new Error('Invalid tensor shape after preprocessing');
     }
 
-    // Run inference
-    const predictions = await model.predict(tensor);
+    let predictions;
+    if (model.type === 'onnx') {
+      // Run inference for ONNX model
+      const feeds = { input: tensor.arraySync() };
+      const results = await model.session.run(feeds);
+      predictions = [
+        results.boxes,
+        results.scores,
+        results.classes
+      ];
+    } else if (model.type === 'tfjs') {
+      // Run inference for TensorFlow.js model
+      predictions = await model.model.predict(tensor);
+    } else {
+      throw new Error('Unsupported model type');
+    }
 
     if (!Array.isArray(predictions) || predictions.length < 3) {
       throw new Error('Invalid predictions format');
