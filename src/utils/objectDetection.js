@@ -1,13 +1,11 @@
-import * as ort from 'onnxruntime-web';
-
 let session;
 
-export async function loadModel() {
+async function loadModel() {
   const modelUrl = '/yolov8n.onnx'; // Adjust the path as needed
   session = await ort.InferenceSession.create(modelUrl);
 }
 
-export async function detectObjects(imageData) {
+async function detectObjects(imageData) {
   if (!session) {
     await loadModel();
   }
@@ -32,3 +30,6 @@ function postprocessResults(results) {
   // Implement postprocessing here
   // This will convert the raw model output into a list of detected objects
 }
+
+// Expose the detectObjects function to the global scope
+self.detectObjects = detectObjects;
