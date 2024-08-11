@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Square, Settings, History, Info } from "lucide-react";
+import { Play, Square, Settings, History, Info, AlertCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -13,15 +14,23 @@ const Index = () => {
     hdpe2: 0,
     carton: 0
   });
+  const [error, setError] = useState(null);
 
   const updateCounts = useCallback(() => {
-    setCounts(prevCounts => ({
-      glass: prevCounts.glass + Math.floor(Math.random() * 2),
-      can: prevCounts.can + Math.floor(Math.random() * 2),
-      pet1: prevCounts.pet1 + Math.floor(Math.random() * 2),
-      hdpe2: prevCounts.hdpe2 + Math.floor(Math.random() * 2),
-      carton: prevCounts.carton + Math.floor(Math.random() * 2)
-    }));
+    // Simulating API call or ML model prediction
+    try {
+      setCounts(prevCounts => ({
+        glass: prevCounts.glass + Math.floor(Math.random() * 2),
+        can: prevCounts.can + Math.floor(Math.random() * 2),
+        pet1: prevCounts.pet1 + Math.floor(Math.random() * 2),
+        hdpe2: prevCounts.hdpe2 + Math.floor(Math.random() * 2),
+        carton: prevCounts.carton + Math.floor(Math.random() * 2)
+      }));
+      setError(null);
+    } catch (err) {
+      setError("Failed to update object counts. Please try again.");
+      setIsDetecting(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -45,16 +54,24 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-100 to-blue-100 p-4">
-      <h1 className="text-3xl font-bold text-center mb-6 text-green-800">Recycling Object Counter</h1>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-center text-green-800">Recycling Object Counter</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="col-span-1 md:col-span-2">
           <CardHeader>
             <CardTitle>Live Feed</CardTitle>
           </CardHeader>
           <CardContent className="h-64 bg-gray-200 flex items-center justify-center">
-            <p className="text-gray-500">Live feed placeholder</p>
+            <img src="/placeholder.svg" alt="Live feed" className="h-full w-full object-cover" />
           </CardContent>
         </Card>
         
@@ -70,7 +87,7 @@ const Index = () => {
         ))}
       </div>
 
-      <div className="flex justify-center space-x-4 mb-6">
+      <div className="flex justify-center space-x-4">
         <Button onClick={toggleDetection} className="w-32">
           {isDetecting ? <><Square className="mr-2 h-4 w-4" /> Stop</> : <><Play className="mr-2 h-4 w-4" /> Start</>}
         </Button>
