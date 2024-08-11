@@ -23,11 +23,12 @@ const SettingsPage = () => {
       const file = files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
+        const fileContent = event.target.result;
         updateSettings({
           ...settings,
           [fileType]: {
             name: file.name,
-            content: event.target.result,
+            content: Array.from(new Uint8Array(fileContent)),
           },
         });
       };

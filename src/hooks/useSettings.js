@@ -17,6 +17,7 @@ export function useSettings() {
           ...parsedSettings,
           detectionThreshold: parseFloat(parsedSettings.detectionThreshold) || 0.3,
           updateInterval: parseInt(parsedSettings.updateInterval, 10) || 500,
+          modelFile: parsedSettings.modelFile ? JSON.parse(parsedSettings.modelFile) : null,
         }));
       } catch (error) {
         console.error('Error parsing stored settings:', error);
@@ -29,6 +30,7 @@ export function useSettings() {
       ...newSettings,
       detectionThreshold: parseFloat(newSettings.detectionThreshold),
       updateInterval: parseInt(newSettings.updateInterval, 10),
+      modelFile: newSettings.modelFile ? JSON.stringify(newSettings.modelFile) : null,
     };
     setSettings(updatedSettings);
     localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
