@@ -61,10 +61,13 @@ export function useSettings() {
     if (loadedModel) return loadedModel;
     
     const modelFile = await getModelFile(settings.modelFileName);
-    if (!modelFile) return null;
+    if (!modelFile) {
+      console.error('Model file not found');
+      return null;
+    }
 
     try {
-      const modelArrayBuffer = modelFile instanceof Uint8Array ? modelFile : new Uint8Array(modelFile);
+      const modelArrayBuffer = modelFile instanceof Uint8Array ? modelFile.buffer : modelFile;
       
       // Check if it's an ONNX model
       if (settings.modelFileName.endsWith('.onnx')) {
@@ -77,9 +80,17 @@ export function useSettings() {
       } else {
         // Assume it's a TensorFlow.js model
         const modelJson = JSON.parse(new TextDecoder().decode(modelArrayBuffer));
+        const modelArtifacts = {
+          modelTopology: modelJson.modelTopology,
+          weightSpecs: modelJson.weightSpecs,
+          weightData: modelJson.weightData ? new Uint8Array(modelJson.weightData).buffer : null,
+          format: modelJson.format,
+          generatedBy: modelJson.generatedBy,
+          convertedBy: modelJson.convertedBy
+        };
         loadedModel = {
           type: 'tfjs',
-          model: await tf.loadGraphModel(tf.io.fromMemory(modelJson))
+          model: await tf.loadGraphModel(tf.io.fromMemory(modelArtifacts))
         };
         console.log('TensorFlow.js model loaded successfully');
       }
