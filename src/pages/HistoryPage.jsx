@@ -22,7 +22,7 @@ const HistoryPage = () => {
           <LineChart width={600} height={300} data={data} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
-            <YAxis />
+            <YAxis width={40} />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="glass" stroke="#8884d8" />
