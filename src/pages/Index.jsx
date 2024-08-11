@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Square, Settings, History, Info, AlertCircle } from "lucide-react";
+import { Play, Square, Settings, History, Info, AlertCircle, Camera } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -15,9 +16,11 @@ const Index = () => {
     carton: 0
   });
   const [error, setError] = useState(null);
+  const videoRef = useRef(null);
+  const { toast } = useToast();
 
   const updateCounts = useCallback(() => {
-    // Simulating API call or ML model prediction
+    // In a real application, this would be replaced with actual object detection logic
     try {
       setCounts(prevCounts => ({
         glass: prevCounts.glass + Math.floor(Math.random() * 2),
@@ -30,19 +33,61 @@ const Index = () => {
     } catch (err) {
       setError("Failed to update object counts. Please try again.");
       setIsDetecting(false);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update object counts. Please try again.",
+      });
     }
-  }, []);
+  }, [toast]);
+
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing the camera:", err);
+      toast({
+        variant: "destructive",
+        title: "Camera Error",
+        description: "Unable to access the camera. Please check your permissions.",
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     let interval;
     if (isDetecting) {
+      startCamera();
       interval = setInterval(updateCounts, 2000);
+    } else {
+      if (videoRef.current && videoRef.current.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
     }
-    return () => clearInterval(interval);
-  }, [isDetecting, updateCounts]);
+    return () => {
+      clearInterval(interval);
+      if (videoRef.current && videoRef.current.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isDetecting, updateCounts, startCamera]);
 
   const toggleDetection = () => {
     setIsDetecting(prev => !prev);
+    if (!isDetecting) {
+      toast({
+        title: "Detection Started",
+        description: "The system is now detecting and counting objects.",
+      });
+    } else {
+      toast({
+        title: "Detection Stopped",
+        description: "Object detection has been stopped.",
+      });
+    }
   };
 
   const chartData = [
@@ -70,8 +115,21 @@ const Index = () => {
           <CardHeader>
             <CardTitle>Live Feed</CardTitle>
           </CardHeader>
-          <CardContent className="h-64 bg-gray-200 flex items-center justify-center">
-            <img src="/placeholder.svg" alt="Live feed" className="h-full w-full object-cover" />
+          <CardContent className="h-64 bg-gray-200 flex items-center justify-center relative">
+            {isDetecting ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center">
+                <Camera className="h-16 w-16 text-gray-400 mb-2" />
+                <p className="text-gray-500">Camera feed will appear here when detection starts</p>
+              </div>
+            )}
           </CardContent>
         </Card>
         
